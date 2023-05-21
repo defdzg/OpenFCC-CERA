@@ -269,7 +269,7 @@ def calculate_freezing_time(behavior_labels, step_size):
         else:  # Moving
             moving_time += step_size
 
-    return moving_time, freezing_time
+    return freezing_time, moving_time
 
 def analyze_signal(input_file, num_signals, sampling_frequency, cutoff_frequency, window_size, step_size, threshold):
     """
