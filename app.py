@@ -353,14 +353,14 @@ def read_experiment_parameters(input_file):
 # low-pass filter design and classification. The user can then click the "Analyze" button to calculate
 # the freezing and moving times and generate plots of the signals. The results are displayed in
 # textboxes and plot windows within the GUI.
-with gr.Blocks(title="Motion signals analysis tool", css="footer {visibility: hidden}", theme=gr.themes.Soft(primary_hue="sky")) as interface:
+with gr.Blocks(title="CERA - OpenFCC", css="footer {visibility: hidden}", theme=gr.themes.Soft(primary_hue="cyan")) as interface:
     gr.Markdown(
     """
-    # Conditioning Experiment Results Analysis Tool
+    # CERA (Conditioning Experiment Results Analysis) Tool
     
     A tool for analyzing outuput files from the conditioning experiment and movement signals from the PIR sensors.
     
-    Developed by Daniel Fernández.
+    Developed by Daniel Fernández (@defdzg), 2023.
     """)
     with gr.Tab(label="Experiment configuration parameters"):
         with gr.Row():
@@ -443,4 +443,4 @@ with gr.Blocks(title="Motion signals analysis tool", css="footer {visibility: hi
         
         
         
-interface.launch()
+interface.launch(favicon_path=os.path.join(os.path.dirname(__file__), "icon.png"))
