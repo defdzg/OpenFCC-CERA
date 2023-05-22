@@ -360,7 +360,7 @@ with gr.Blocks(title="Motion signals analysis tool", css="footer {visibility: hi
     
     A tool for analyzing outuput files from the conditioning experiment and movement signals from the PIR sensors.
     
-    Developed by Daniel Fernández as part of OpenOCC.
+    Developed by Daniel Fernández.
     """)
     with gr.Tab(label="Experiment configuration parameters"):
         with gr.Row():
