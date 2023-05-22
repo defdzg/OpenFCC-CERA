@@ -356,7 +356,7 @@ def read_experiment_parameters(input_file):
 with gr.Blocks(title="CERA - OpenFCC", css="footer {visibility: hidden}", theme=gr.themes.Soft(primary_hue="cyan")) as interface:
     gr.Markdown(
     """
-    # CERA (Conditioning Experiment Results Analysis) Tool
+    # Conditioning Experiment Results Analysis (CERA) Tool
     
     A tool for analyzing outuput files from the conditioning experiment and movement signals from the PIR sensors.
     
