@@ -1,7 +1,9 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 from scipy import signal as sig
 import gradio as gr
+import os
 
 def read_signals(file, num_signals):
     """
@@ -319,6 +321,32 @@ def analyze_signal(input_file, num_signals, sampling_frequency, cutoff_frequency
     
     return fig_1, fig_2, freezing_time_avg, moving_time_avg
 
+def read_experiment_parameters(input_file):
+    
+    column_names = ['hour', 'minute', 'seconds', 'day', 'month', 'year', 'experiment_duration', 'experiment_day', 'animal_id', 'exploration_duration', 'tone_frequency', 'tone_duration', 'shock_duration', 'motion_recording_duration', 'wait_interval_duration', 'number_of_repetitions', 'experiment_context']
+    
+    df = pd.read_csv(input_file.name, names=column_names)
+    
+    # Here we order the hour, minute and seconds columns into a single column called time
+    # If any of the values are less than 10, we add a 0 to the beginning of the value
+    df['hour'] = df['hour'].apply(lambda x: '0' + str(x) if x < 10 else str(x))
+    df['minute'] = df['minute'].apply(lambda x: '0' + str(x) if x < 10 else str(x))
+    df['seconds'] = df['seconds'].apply(lambda x: '0' + str(x) if x < 10 else str(x))
+    df['time'] = df['hour'].astype(str) + ':' + df['minute'].astype(str) + ':' + df['seconds'].astype(str)
+    df['date'] = df['day'].astype(str) + '/' + df['month'].astype(str) + '/' + df['year'].astype(str)
+    df.drop(['hour', 'minute', 'seconds', 'day', 'month', 'year'], axis=1, inplace=True)
+    
+    # Here we convert the experiment_duration column from milliseconds to seconds
+    df['experiment_duration'] = df['experiment_duration'] / 1000
+    
+    parameter_list = list(df.columns)
+    values_list = df.values.tolist()
+    
+    data = {"Parameter": parameter_list, "Values": values_list[0]}
+    dataframe = pd.DataFrame(data)
+    
+    return dataframe
+    
 # The above code is creating a graphical user interface (GUI) for a motion signals analysis tool using
 # the `gradio` library in Python. The GUI allows the user to upload a text file containing motion
 # signals from PIR sensors, select the number of signals in the file, and enter various parameters for
@@ -328,49 +356,91 @@ def analyze_signal(input_file, num_signals, sampling_frequency, cutoff_frequency
 with gr.Blocks(title="Motion signals analysis tool", css="footer {visibility: hidden}", theme=gr.themes.Soft(primary_hue="sky")) as interface:
     gr.Markdown(
     """
-    # Motion signals analysis tool
-    This tool analyzes motion signals from the PIR sensors and calculates the freezing and moving times.
+    # Conditioning Experiment Results Analysis Tool
+    
+    A tool for analyzing outuput files from the conditioning experiment and movement signals from the PIR sensors.
+    
+    Developed by Daniel Fernández as part of OpenOCC.
     """)
-    with gr.Row():
-        with gr.Column():
-            gr.Markdown(
+    with gr.Tab(label="Experiment configuration parameters"):
+        with gr.Row():
+            with gr.Column():
+                gr.Markdown(
+                """
+                ### Experiment Parameters File
+                """)
+                input_experiment_file = gr.File(label = "Input File", info="Upload a text file containing the experiment parameters")
+                btn_1 = gr.Button(value="Process", label="Process", info="Click to process the input file")
+            with gr.Column():
+                gr.Markdown(
+                """
+                ### Experiment Information
+                """)
+                table = gr.Dataframe(headers=["Parameter", "Values"])
+                
+        gr.Examples(
+            [
+                os.path.join(os.path.dirname(__file__), "data/CONFIG.TXT"),
+            ],
+            input_experiment_file
+        )
+        
+    with gr.Tab(label="Movement signals analysis"):
+        with gr.Row():
+            with gr.Column():
+                gr.Markdown(
+                """
+                ### Signal File and Sampling Parameters
+                """)
+                input_pir_file = gr.File(label = "Input File", info="Upload a text file containing the signals")
+                num_signals = gr.Dropdown(["1", "2", "3"], label="Number of Signals", value="2", info="Select the number of signals in the file")
+                sampling_frequency = gr.Number(label="Sampling Frequency", value=100, info="Enter the sampling frequency of the signal")
+            with gr.Column():
+                gr.Markdown(
+                """
+                ### Low-Pass Filter Design and Classification Parameters
+                """)
+                cutoff_frequency = gr.Number(label="Cutoff Frequency", value=10, info="Enter the cutoff frequency of the low-pass filter")
+                window_size = gr.Number(label="Window Size", value=5, info="Enter the window for the standard deviation calculation")
+                step_size = gr.Number(label="Step Size", value=5, info="Enter the step size for the standard deviation calculation")
+                threshold = gr.Number(label="Standard Deviation Threshold", value=0.05, info="Enter the standard deviation threshold for the classification")
+                btn_2 = gr.Button(value="Analyze", label="Analyze", info="Click to analyze the signals")
+     
+        gr.Markdown(
             """
-            ### Signal File and Sampling Parameters
+            ### Motion results and signal plots
             """)
-            input_file = gr.File(label = "Input File", info="Upload a text file containing the signals")
-            num_signals = gr.Dropdown(["1", "2", "3"], label="Number of Signals", value="2", info="Select the number of signals in the file")
-            sampling_frequency = gr.Number(label="Sampling Frequency", value=100, info="Enter the sampling frequency of the signal")
-        with gr.Column():
-            gr.Markdown(
-            """
-            ### Low-Pass Filter Design and Classification Parameters
-            """)
-            cutoff_frequency = gr.Number(label="Cutoff Frequency", value=10, info="Enter the cutoff frequency of the low-pass filter")
-            window_size = gr.Number(label="Window Size", value=5, info="Enter the window for the standard deviation calculation")
-            step_size = gr.Number(label="Step Size", value=5, info="Enter the step size for the standard deviation calculation")
-            threshold = gr.Number(label="Standard Deviation Threshold", value=0.05, info="Enter the standard deviation threshold for the classification")
-            btn = gr.Button(value="Analyze")
-            
-    gr.Markdown(
-        """
-        ### Motion results and signal plots
-        """)
-    with gr.Row():
-        with gr.Tab(label="Moving and Freezing Time"):
-            with gr.Row():
-                with gr.Column():
-                    freezing_time = gr.Textbox(label="Freezing Time")
-                with gr.Column():
-                    moving_time = gr.Textbox(label="Moving Time")
-        with gr.Tab(label="Signal Plots"):
-            with gr.Row():
-                with gr.Column():
-                    fig_1 = gr.Plot(label="Signal 1")
-                with gr.Column():
-                    fig_2 = gr.Plot(label="Signal 2")
-            
-    btn.click(analyze_signal,
-                inputs=[input_file, num_signals, sampling_frequency, cutoff_frequency, window_size, step_size, threshold],
-                outputs=[fig_1, fig_2, freezing_time, moving_time])
-
+        with gr.Row():
+            with gr.Tab(label="Moving and Freezing Time"):
+                with gr.Row():
+                    with gr.Column():
+                        freezing_time = gr.Textbox(label="Freezing Time")
+                    with gr.Column():
+                        moving_time = gr.Textbox(label="Moving Time")
+            with gr.Tab(label="Signal Plots"):
+                with gr.Row():
+                    with gr.Column():
+                        fig_1 = gr.Plot(label="Signal 1")
+                    with gr.Column():
+                        fig_2 = gr.Plot(label="Signal 2")
+        
+        gr.Examples(
+            [
+                os.path.join(os.path.dirname(__file__), "data/PIR1.TXT"),
+                os.path.join(os.path.dirname(__file__), "data/PIR2.TXT"),
+                os.path.join(os.path.dirname(__file__), "data/PIR3.TXT"),
+            ],
+            input_pir_file
+        )
+        
+        btn_1.click(read_experiment_parameters,
+                    inputs=[input_experiment_file],
+                    outputs=[table])
+        
+        btn_2.click(analyze_signal,
+                    inputs=[input_pir_file, num_signals, sampling_frequency, cutoff_frequency, window_size, step_size, threshold],
+                    outputs=[fig_1, fig_2, freezing_time, moving_time])
+        
+        
+        
 interface.launch()
